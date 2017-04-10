@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Local weatherman</title>
+    <style>
+      html, body #container {
+          height: 100%;
+          width: 100%;
+      }
+
+      .info {
+        background-image: url("./images/weatherForm.png");
+        background-repeat: no-repeat;
+        font-size: 30px;
+        margin-top: 50px;
+        margin-left: auto;
+        margin-right: auto;
+        padding-top: 50px;
+        position: relative;
+
+        width: 388px;
+        height: 444px;
+      }
+
+      .intro {
+        font-size: 30px;
+      }
+
+      #container {
+        background-image: url("./images/background.jpg");
+        background-size: cover;
+        background-repeat: no-repeat;
+        border: 1px solid #000000;
+        position:fixed;
+        text-align: center;
+      }
+
+      #weatherIMG {
+        width: 100px;
+        height: 100px;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="container">
+      <p class="intro">Hello user.  Here's the current conditions for:</p>
+      <div class="info">
+        <div class="infoBackdrop">
+          <p id="location"></p>
+          <p id="temperature"></p>
+          <img id="weatherIMG"/>
+          <p id="weather"></p>
+        </div>
+      </div>
+    </div>
+    <script>
+      var urls = ["http://weathersync.herokuapp.com/ip", "http://weathersync.herokuapp.com/weather/", "http://openweathermap.org/img/w/"];
+
+      function resizeDiv() {
+        document.getElementById("container").style.width = (window.innerWidth - 20)+"px";
+        document.getElementById("container").style.height = (window.innerHeight - 20)+"px";
+      }
+
+      function httpRequest(url, callback) {
+        var xhr = new XMLHttpRequest();
+
+        xhr.open("GET", url, true);
+
+        xhr.onreadystatechange = function() {
+          if(xhr.readyState === 4 && xhr.status === 200) {
+            var res = JSON.parse(xhr.responseText);
+            callback(res);
+          }
+        };
+
+        xhr.send();
+      }
+
+      function getData(urlArr, callback) {
+        var weatherData = [];
+
+        httpRequest(urlArr[0], function(ipData) {
+          weatherData.push(ipData);
+          urlArr[1] += weatherData[0].location.latitude+","+weatherData[0].location.longitude;
+          httpRequest(urlArr[1], function(tempData) {
+            weatherData.push(tempData);
+            weatherData.push (urlArr[2]+weatherData[1].weather[0].icon+".png");
+            callback(weatherData);
+          });
+        });
+      }
+
+      getData(urls, function(data) {
+        var tempConverter = 273.15;
+
+        document.getElementById("location").textContent = data[0].city;
+        document.getElementById("temperature").textContent = Math.round(((data[1].main.temp - tempConverter) * 9/5) + 32)+"\xB0 F";
+        document.getElementById("weatherIMG").src = data[2];
+        document.getElementById("weather").textContent = data[1].weather[0].description;
+      });
+
+      window.onresize = resizeDiv;
+      resizeDiv();
+    </script>
+  </body>
+</html>
